@@ -1,8 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test('ficha, cadastro de item, consumo, recarga e calculadora funcionam através da API', async ({ page }) => {
+async function navigate(page, name) {
+  await page.getByRole('button', { name: 'Abrir navegação' }).click();
+  await page.getByRole('button', { name, exact: true }).click();
+}
+
+test('ficha, cadastro de item, consumo, recarga e cálculo no Hub de Batalha funcionam através da API', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tela única' }).click();
   await page.getByRole('tab', { name: 'Inventário' }).click();
   await page.getByRole('button', { name: 'Adicionar Item', exact: true }).click();
   await page.getByLabel('Nome ou título').fill(`Poção ${test.info().project.name}`);
@@ -13,9 +19,11 @@ test('ficha, cadastro de item, consumo, recarga e calculadora funcionam através
   await page.getByRole('button', { name: `Consumir uma unidade de Poção ${test.info().project.name}` }).click();
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
   await page.reload();
+  await page.getByRole('button', { name: 'Tela única' }).click();
   await page.getByRole('tab', { name: 'Inventário' }).click();
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
-  await page.getByRole('button', { name: 'Calculadora', exact: true }).click();
+  await navigate(page, 'Batalha');
+  await page.getByText('Rolagens e cálculo manual').click();
   await page.getByLabel('Primeiro d20 físico').fill('12');
   await page.getByRole('combobox', { name: 'Proficiência', exact: true }).selectOption('proficient');
   await page.getByRole('button', { name: 'Calcular teste' }).click();
@@ -27,13 +35,14 @@ test('ficha, cadastro de item, consumo, recarga e calculadora funcionam através
 test('consulta NPC e locais e registra diário mantendo a origem', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
-  await page.getByRole('button', { name: 'Campanha', exact: true }).click();
+  await navigate(page, 'Campanha');
+  await page.getByRole('button', { name: 'Tela única' }).click();
   await page.getByRole('button', { name: 'Editar Mira, a artesã' }).click();
   await expect(page.getByLabel('Origem da informação')).toHaveValue('Exemplo fictício do projeto');
   await page.getByRole('button', { name: 'Fechar', exact: true }).click();
   await page.getByRole('tab', { name: 'Locais', exact: true }).click();
   await expect(page.getByText('Mapa esquemático · sem escala')).toBeVisible();
-  await page.getByRole('button', { name: 'Diário de sessão', exact: true }).click();
+  await navigate(page, 'Diário de sessão');
   await page.getByRole('button', { name: 'Adicionar Anotação', exact: true }).click();
   await page.getByLabel('Nome ou título').fill(`Pista ${test.info().project.name}`);
   await page.getByLabel('Descrição completa').fill('Uma pista ainda precisa de confirmação.');
