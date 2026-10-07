@@ -5,10 +5,14 @@ async function navigate(page, name) {
   await page.getByRole('button', { name, exact: true }).click();
 }
 
+async function useSingleView(page) {
+  await page.getByRole('button', { name: /Escudo aberto/ }).click();
+}
+
 test('ficha, cadastro de item, consumo, recarga e cálculo no Hub de Batalha funcionam através da API', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
-  await page.getByRole('button', { name: 'Tela única' }).click();
+  await useSingleView(page);
   await page.getByRole('tab', { name: 'Inventário' }).click();
   await page.getByRole('button', { name: 'Adicionar Item', exact: true }).click();
   await page.getByLabel('Nome ou título').fill(`Poção ${test.info().project.name}`);
@@ -19,7 +23,7 @@ test('ficha, cadastro de item, consumo, recarga e cálculo no Hub de Batalha fun
   await page.getByRole('button', { name: `Consumir uma unidade de Poção ${test.info().project.name}` }).click();
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
   await page.reload();
-  await page.getByRole('button', { name: 'Tela única' }).click();
+  await useSingleView(page);
   await page.getByRole('tab', { name: 'Inventário' }).click();
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
   await navigate(page, 'Batalha');
@@ -36,7 +40,7 @@ test('consulta NPC e locais e registra diário mantendo a origem', async ({ page
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
   await navigate(page, 'Campanha');
-  await page.getByRole('button', { name: 'Tela única' }).click();
+  await useSingleView(page);
   await page.getByRole('button', { name: 'Editar Mira, a artesã' }).click();
   await expect(page.getByLabel('Origem da informação')).toHaveValue('Exemplo fictício do projeto');
   await page.getByRole('button', { name: 'Fechar', exact: true }).click();
