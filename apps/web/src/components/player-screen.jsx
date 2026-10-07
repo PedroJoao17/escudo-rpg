@@ -1,15 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { abilityModifier, proficiencyBonus } from '@escudo/rules';
 import { apiRequest } from '../lib/api';
 import Modal from './modal';
 import EntryEditor, { kindLabels } from './entry-editor';
-import Calculator from './calculator';
+import BattleHub from './battle-hub';
+import NavigationLauncher from './navigation-launcher';
 
 const attributes = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
-const names = { ability: 'Habilidades', sheet: 'Ficha', item: 'Inventário', npc: 'NPCs', mechanic: 'Mecânicas', location: 'Locais', math: 'Calculadora', note: 'Diário' };
-const icons = { ability: '✧', sheet: '◈', item: '▣', npc: '♧', mechanic: '⚙', location: '⌖', math: '◇', note: '≡' };
+const names = { ability: 'Habilidades', sheet: 'Ficha', item: 'Inventário', npc: 'NPCs', mechanic: 'Mecânicas', location: 'Locais', math: 'Batalha', note: 'Diário' };
+const icons = { ability: '✧', sheet: '◈', item: '▣', npc: '♧', mechanic: '⚙', location: '⌖', math: '⚔', note: '≡' };
 const personalTabs = ['ability', 'sheet', 'item'];
 const campaignTabs = ['npc', 'mechanic', 'location'];
 const profileNames = { homebrew: 'Regras da mesa', 'dnd5e-2014': 'D&D 5e · 2014', 'dnd5e-2024': 'D&D 5e · 2024' };
@@ -30,6 +30,7 @@ export default function PlayerScreen() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -94,8 +95,8 @@ export default function PlayerScreen() {
       <div className="card-heading"><h3>{entry.title}</h3><button className="icon-button" disabled={saving} aria-label={`Editar ${entry.title}`} onClick={() => setModal({ type: 'entry', kind: entry.kind, entry })}>↗</button></div>
       <div className="tags">
         {entry.kind === 'ability' && <><span className="tag">Nível {p.requiredLevel ?? 1} {locked ? '· Futuro' : '· Disponível'}</span><span className="tag">{p.category ?? 'Habilidade'}</span></>}
-        {entry.kind === 'npc' && <><span className="tag">{p.role || 'Pessoa conhecida'}</span>{p.unlocked && <span className="tag good">Confiança conquistada</span>}</>}
-        {entry.kind === 'item' && <>{p.equipped && <span className="tag good">Equipado</span>}{p.reusable && <span className="tag">Reutilizável</span>}{p.container && (!p.equipped || p.container.toLowerCase() !== 'equipado') && <span className="tag">{p.container}</span>}</>}
+        {entry.kind === 'npc' && <><span className="tag">{p.role || 'Pessoa conhecida'}</span>{p.unlocked && <span className="tag good">Confiança conquistada</span>}{p.trust && <span className="tag good">Confiança {p.trust}</span>}</>}
+        {entry.kind === 'item' && <>{p.equipped && <span className="tag good">Equipado</span>}{p.reusable && <span className="tag">Reutilizável</span>}{p.container && (!p.equipped || p.container.toLowerCase() !== 'equipado') && <span className="tag">{p.container}</span>}{p.weight !== undefined && <span className="tag">{p.weight.toLocaleString('pt-BR')} kg</span>}</>}
         {entry.kind === 'location' && p.status && <span className="tag">{p.status}</span>}
         {entry.kind === 'note' && p.gameDay !== undefined && <span className="tag">Dia {p.gameDay}</span>}
         {entry.knowledge !== 'confirmed' && <span className="tag warning">{entry.knowledge === 'rumor' ? 'Rumor' : 'A confirmar'}</span>}
@@ -112,25 +113,35 @@ export default function PlayerScreen() {
       </div>
     </article>;
   }
-  function collection(kind) {
-    const list = visibleEntries(kind).sort((a, b) => kind === 'ability' ? (a.payload.requiredLevel ?? 1) - (b.payload.requiredLevel ?? 1) : kind === 'note' ? (b.payload.gameDay ?? 0) - (a.payload.gameDay ?? 0) : 0);
-    return <section className="panel collection"><div className="panel-title"><div><p className="eyebrow">{group === 'personal' ? 'Seu personagem' : 'Sua campanha'}</p><h2>{names[kind]}</h2></div><button className="add-button" aria-label={`Adicionar ${kindLabels[kind]}`} onClick={() => add(kind)}>+</button></div>
-      {kind === 'item' && <p className="muted">Peso conhecido: {list.reduce((sum, e) => sum + (e.payload.quantity ?? 1) * (e.payload.weight ?? 0), 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg</p>}
-      {kind === 'location' && <div className="map"><span className="map-label">Mapa esquemático · sem escala</span>{list.map((e) => <button key={e.id} className="map-pin" style={{ left: `${Math.max(12, Math.min(88, e.payload.x ?? 50))}%`, top: `${Math.max(18, Math.min(86, e.payload.y ?? 50))}%` }} onClick={() => setModal({ type: 'entry', kind, entry: e })}>⌖<span>{e.title}</span></button>)}</div>}
+  function collection(kind, compact = false) {
+    let list = visibleEntries(kind).sort((a, b) => kind === 'ability' ? (a.payload.requiredLevel ?? 1) - (b.payload.requiredLevel ?? 1) : kind === 'note' ? (b.payload.gameDay ?? 0) - (a.payload.gameDay ?? 0) : 0);
+    if (compact && kind === 'ability') {
+      const currentLevel = list.filter((e) => (e.payload.requiredLevel ?? 1) === character.level && e.payload.learned !== false);
+      const available = list.filter((e) => (e.payload.requiredLevel ?? 1) <= character.level && e.payload.learned !== false);
+      list = (currentLevel.length ? currentLevel : available.slice().reverse()).slice(0, 3);
+    } else if (compact && kind === 'item') {
+      list = [...list].sort((a, b) => Number(Boolean(b.payload.equipped)) - Number(Boolean(a.payload.equipped))).slice(-4).reverse();
+    } else if (compact) list = list.slice(0, 3);
+    const knownWeights = list.filter((e) => e.payload.weight !== undefined && e.payload.weight !== null && e.payload.weight !== '');
+    const knownWeightTotal = knownWeights.reduce((sum, e) => sum + (e.payload.quantity ?? 1) * Number(e.payload.weight), 0);
+    return <section className={`panel collection ${compact ? 'compact-panel' : ''}`}><div className="panel-title"><div><p className="eyebrow">{group === 'personal' ? 'Seu personagem' : 'Sua campanha'}</p><h2>{names[kind]}</h2></div><button className="add-button" aria-label={`Adicionar ${kindLabels[kind]}`} onClick={() => add(kind)}>+</button></div>
+      {kind === 'item' && knownWeights.length > 0 && <p className="muted">Peso conhecido: {knownWeightTotal.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg</p>}
+      {kind === 'location' && !compact && <div className="map"><span className="map-label">Mapa esquemático · sem escala</span>{list.map((e) => <button key={e.id} className="map-pin" style={{ left: `${Math.max(12, Math.min(88, e.payload.x ?? 50))}%`, top: `${Math.max(18, Math.min(86, e.payload.y ?? 50))}%` }} onClick={() => setModal({ type: 'entry', kind, entry: e })}>⌖<span>{e.title}</span></button>)}</div>}
       <div className="card-list">{list.length ? list.map(entryCard) : <div className="empty"><span>{icons[kind]}</span><p>{query ? 'Nenhum registro corresponde à busca.' : `Seu escudo está pronto para receber ${names[kind].toLowerCase()}.`}</p><button className="secondary" onClick={() => add(kind)}>Adicionar {kindLabels[kind].toLowerCase()}</button></div>}</div>
+      {compact && visibleEntries(kind).length > list.length && <button className="text-button compact-more" onClick={() => { setWide(false); choose(kind); }}>Ver todos os registros →</button>}
     </section>;
   }
-  function sheet() {
-    return <section className="panel character-panel"><div className="panel-title"><div><p className="eyebrow">O centro do seu escudo</p><h2>Ficha</h2></div><button className="text-button" onClick={() => setModal({ type: 'character', character })}>Editar ficha</button></div>
-      <div className="character-emblem" aria-hidden="true"><svg viewBox="0 0 100 120"><path d="M50 4 90 22v43c0 22-20 42-40 52C30 107 10 87 10 65V22Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="m50 25 18 28-18 29-18-29Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M50 16v78M26 53h48" fill="none" stroke="currentColor" strokeWidth="1" /></svg></div>
-      <h3 className="character-name">{character.name}</h3><p className="character-subtitle">{character.species} · {character.className}</p><p className="tag level-tag">Nível {character.level} · {character.background || 'Antecedente a definir'}</p>
+  function sheet(compact = false) {
+    return <section className={`panel character-panel ${compact ? 'compact-panel' : ''}`}><div className="panel-title"><div><p className="eyebrow">O centro do seu escudo</p><h2>Ficha</h2></div><button className="text-button" onClick={() => setModal({ type: 'character', character })}>Editar ficha</button></div>
+      <div className="character-identity"><div className="character-emblem" aria-hidden="true"><svg viewBox="0 0 100 120"><path d="M50 4 90 22v43c0 22-20 42-40 52C30 107 10 87 10 65V22Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="m50 25 18 28-18 29-18-29Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M50 16v78M26 53h48" fill="none" stroke="currentColor" strokeWidth="1" /></svg></div><div><h3 className="character-name">{character.name}</h3><p className="character-subtitle">{character.species} · {character.className}</p><p className="tag level-tag">Nível {character.level} · {character.background || 'Antecedente a definir'}</p></div></div>
       <div className="hp-area"><div className="hp-line"><span>Pontos de vida</span><strong>{character.hp}<small> / {character.hpMax}</small></strong></div><progress max={character.hpMax} value={character.hp} aria-label="Pontos de vida" /><div className="hp-actions"><button disabled={saving} onClick={() => mutate(`${base}/characters/${character.id}/hp`, { delta: -1, expectedRevision: character.revision }, 'POST', false).catch(() => {})}>−1 PV</button><span>{character.tempHp} PV temporários</span><button disabled={saving} onClick={() => mutate(`${base}/characters/${character.id}/hp`, { delta: 1, expectedRevision: character.revision }, 'POST', false).catch(() => {})}>+1 PV</button></div></div>
       <div className="quick-stats"><div><span>CA base</span><strong>{character.armorClass}</strong></div><div><span>Proficiência</span><strong>+{proficiencyBonus(character.level)}</strong></div><div><span>Deslocamento</span><strong>{character.speed.toLocaleString('pt-BR')} m</strong></div></div>
       <p className="muted small">CA registrada na ficha. Efeitos e estilos temporários devem ser conferidos na mesa.</p>
       <div className="attribute-grid">{Object.entries(attributes).map(([key, name]) => <div key={key}><span>{name}</span><strong>{signed(abilityModifier(character.attributes[key]))}</strong><small>{character.attributes[key]}</small></div>)}</div>
-      <div className="sheet-details">{Object.entries(character.details).map(([label, value]) => <details key={label}><summary>{label}</summary><p className="preserve-text">{value}</p></details>)}</div>
+      {!compact && <><div className="sheet-details">{Object.entries(character.details).map(([label, value]) => <details key={label} open={/perícias|salvaguardas/i.test(label)}><summary>{label}</summary><p className="preserve-text">{value}</p></details>)}</div>
       {!!character.resources.length && <div className="resources"><h3>Recursos registrados</h3>{character.resources.map((r, i) => <p key={i}><span>{r.name}</span><strong>{r.current} / {r.max}</strong></p>)}<p className="muted small">Atualize na edição da ficha. Recuperação permanece manual.</p></div>}
-      {visibleEntries('companion').map(entryCard)}<button className="text-button" onClick={() => add('companion')}>+ Registrar companheiro ou montaria</button>
+      {visibleEntries('companion').map(entryCard)}<button className="text-button" onClick={() => add('companion')}>+ Registrar companheiro ou montaria</button></>}
+      {compact && <button className="text-button compact-more" onClick={() => { setWide(false); choose('sheet'); }}>Abrir ficha completa →</button>}
     </section>;
   }
 
@@ -145,10 +156,7 @@ export default function PlayerScreen() {
   }
 
   return <div className="app-shell">
-    <aside className="sidebar"><Link href="/" className="brand"><span className="brand-icon">◈</span><span>ESCUDO<span className="brand-small">RPG</span></span></Link><p className="sidebar-caption">SEU LADO DA AVENTURA</p>
-      <nav aria-label="Navegação principal"><p className="nav-label">Seu escudo</p>{[['sheet', 'Personagem', '◈'], ['npc', 'Campanha', '⌖'], ['math', 'Calculadora', '◇'], ['note', 'Diário de sessão', '≡']].map(([key, label, icon]) => <button key={key} className={`nav-button ${(key === 'sheet' ? group === 'personal' : key === 'npc' ? group === 'campaign' : screen === key) ? 'active' : ''}`} onClick={() => choose(key)}><span aria-hidden="true">{icon}</span>{label}</button>)}</nav>
-      <div className="sidebar-bottom"><span className="online-dot" /><p>Um caderno pessoal.<br /><strong>Uma aventura por vez.</strong></p></div>
-    </aside>
+    <NavigationLauncher group={group} screen={screen} open={navOpen} onToggle={setNavOpen} onChoose={choose} />
     <main><header className="topbar"><div className="breadcrumb">Escudo RPG <span>/</span> {group === 'personal' ? 'Personagem' : group === 'campaign' ? 'Campanha' : names[screen]}</div><div className="topbar-actions"><button className="text-button" disabled={!campaign || saving} onClick={() => refresh().then(() => setNotice({ text: 'Informações atualizadas.', error: false })).catch((e) => setNotice({ text: e.message, error: true }))}>↻ Atualizar</button><button className="secondary" disabled={!campaign} onClick={exportCampaign}>Exportar caderno ↗</button></div></header>
       <div className="main-content"><section className="hero"><div><p className="eyebrow">CONCENTRE-SE NA AVENTURA</p><h1>Seu lado da aventura.</h1><p>Conheça seu personagem. Conecte as pistas. Guarde o que importa.</p></div><span className="hero-mark" aria-hidden="true">✦</span></section>
         {mode === 'demo' && <div className="demo-banner"><strong>Demonstração com dados fictícios.</strong> As alterações duram até encerrar esta demonstração.</div>}
@@ -157,11 +165,11 @@ export default function PlayerScreen() {
           <div className="context-divider" />{campaign && <><label>Personagem<select aria-label="Personagem" value={characterId} onChange={(e) => setCharacterId(e.target.value)} disabled={saving}>{!character && <option value="">Sem personagem</option>}{snapshot.characters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button className="text-button" onClick={() => setModal({ type: 'character' })}>+ Novo personagem</button><span className="tag context-tag">{profileNames[campaign.rulesProfile]} · Dia {campaign.gameDay}</span></>}
         </section>
         {loading ? <div className="panel loading" role="status">Abrindo seu caderno…</div> : loadError ? <div className="panel empty" role="alert"><h2>Não foi possível abrir o escudo</h2><p>{loadError}</p><button className="primary" onClick={() => window.location.reload()}>Tentar novamente</button></div> : !campaign ? <div className="panel empty"><h2>A primeira página da aventura</h2><p>Crie uma campanha e seu personagem para começar.</p><button className="primary" onClick={() => setModal({ type: 'campaign' })}>Criar campanha</button></div> : !character ? <div className="panel empty"><h2>Quem vive esta aventura?</h2><p>Crie a primeira ficha deste caderno.</p><button className="primary" onClick={() => setModal({ type: 'character' })}>Criar personagem</button></div> : <>
-          <div className="screen-toolbar"><div role="tablist" aria-label="Telas do escudo" className="tabs">{tabs.map((key) => <button role="tab" aria-selected={screen === key} key={key} className={screen === key ? 'selected' : ''} onClick={() => choose(key)}><span aria-hidden="true">{icons[key]}</span>{names[key]}</button>)}</div>
-            <div className="toolbar-tools">{screen !== 'math' && <label className="search"><span aria-hidden="true">⌕</span><input aria-label="Buscar nesta tela" placeholder="Buscar nesta tela…" value={query} onChange={(e) => setQuery(e.target.value)} /></label>}{['personal', 'campaign'].includes(group) && <button className={`secondary view-toggle ${wide ? 'toggled' : ''}`} aria-pressed={wide} onClick={() => setWide(!wide)}>{wide ? '▥ Escudo aberto' : '▣ Tela única'}</button>}</div>
+          <div className="screen-toolbar">{(!wide || !['personal', 'campaign'].includes(group)) && <div role="tablist" aria-label="Telas do escudo" className="tabs">{tabs.map((key) => <button role="tab" aria-selected={screen === key} key={key} className={screen === key ? 'selected' : ''} onClick={() => choose(key)}><span aria-hidden="true">{icons[key]}</span>{names[key]}</button>)}</div>}
+            <div className="toolbar-tools">{screen !== 'math' && <label className="search"><span aria-hidden="true">⌕</span><input aria-label="Buscar nesta tela" placeholder="Buscar nesta tela…" value={query} onChange={(e) => setQuery(e.target.value)} /></label>}{['personal', 'campaign'].includes(group) && <button className={`secondary view-toggle ${wide ? 'toggled' : ''}`} aria-pressed={wide} onClick={() => setWide(!wide)}><span aria-hidden="true">◌</span> {wide ? 'Escudo aberto' : 'Tela única'}</button>}</div>
           </div>
           {pending > 0 && <p className="pending-line">◌ {pending} {pending === 1 ? 'informação precisa' : 'informações precisam'} de confirmação. Seus registros mantêm a origem visível.</p>}
-          {screen === 'math' ? <Calculator key={characterId} character={character} /> : screen === 'note' ? <div className="single-screen">{collection('note')}</div> : <div className={`screen-grid ${wide ? 'wide-view' : 'single-view'}`}>{(wide ? tabs : [screen]).map((key) => <div key={key} className={`screen-pane ${key === screen ? 'focused-pane' : ''}`}>{key === 'sheet' ? sheet() : collection(key)}</div>)}</div>}
+          {screen === 'math' ? <BattleHub character={character} entries={entries} onOpenEntry={(entry) => setModal({ type: 'entry', kind: entry.kind, entry })} /> : screen === 'note' ? <div className="single-screen">{collection('note')}</div> : <div className={`screen-grid ${wide ? 'wide-view' : 'single-view'}`}>{(wide ? tabs : [screen]).map((key) => <div key={key} className={`screen-pane ${key === screen ? 'focused-pane' : ''}`}>{key === 'sheet' ? sheet(wide) : collection(key, wide)}</div>)}</div>}
         </>}
         <footer className="page-footer">ESCUDO RPG <span>Informações do jogador, na perspectiva do jogador.</span></footer>
       </div>
