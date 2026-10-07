@@ -1,4 +1,5 @@
 import './globals.css';
+import './layout-overrides.css';
 
 export const metadata = { title: 'Escudo RPG · Seu lado da aventura', description: 'Ficha, habilidades, inventário e memórias de campanha em um escudo pessoal para jogadores.' };
 export default function RootLayout({ children }) {
