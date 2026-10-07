@@ -1,0 +1,30 @@
+name: Funcionalidade do escudo
+description: Descreva uma necessidade do jogador e como validar a entrega.
+title: "[MVP] "
+body:
+  - type: textarea
+    id: player-need
+    attributes:
+      label: Necessidade do jogador
+      description: Em qual momento da sessão isso ajuda? Inclua um exemplo.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Comportamento esperado
+      description: O que o jogador deve conseguir fazer e consultar?
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Fonte e dúvidas de regra
+      description: Livro, edição, regra caseira, decisão do mestre ou informação ainda incerta.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      description: Resultados observáveis e testes necessários.
+    validations:
+      required: true

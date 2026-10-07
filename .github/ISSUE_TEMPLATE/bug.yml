@@ -1,0 +1,16 @@
+name: Problema encontrado
+description: Registre uma falha ao usar o escudo.
+title: "[Bug] "
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Informe tela, ação, resultado atual e resultado esperado.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: "Windows, Node 24, navegador, modo MySQL ou demo"
