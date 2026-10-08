@@ -1,0 +1,84 @@
+.modal-wide { width: min(1120px, calc(100% - 30px)); max-height: 92vh; }
+
+.character-editor { display: grid; gap: 18px; }
+.character-form-section { margin: 0; min-width: 0; border: 1px solid #3f5042; border-radius: 10px; padding: 16px; background: #172219; }
+.character-form-section legend { padding: 0 8px; color: #e1d3a6; font-family: Georgia, serif; font-size: 18px; }
+.character-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.character-form-grid.combat-fields { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.field-span-2 { grid-column: span 2; }
+.character-form-columns { display: grid; grid-template-columns: .8fr 1.2fr; gap: 18px; align-items: start; }
+.attribute-form-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.attribute-form-grid label { padding: 10px; border: 1px solid #40503e; border-radius: 8px; background: #101a13; text-align: center; }
+.attribute-form-grid label > span { display: block; color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+.attribute-form-grid label > small { display: block; min-height: 19px; margin: 2px 0 7px; color: var(--muted); font-size: 10px; }
+.attribute-form-grid input { text-align: center; margin-top: 0 !important; font-size: 17px; }
+.form-help { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+.choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.skill-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.choice-chip { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 9px; border: 1px solid #3d4d3d; border-radius: 7px; background: #101a13; color: #c8d4c4; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .15s ease; }
+.choice-chip:hover { border-color: #687153; background: #1d291f; transform: translateY(-1px); }
+.choice-chip input { width: 16px; height: 16px; flex: 0 0 auto; margin: 0; }
+.choice-chip span { min-width: 0; }
+.choice-chip small { display: block; margin-top: 1px; color: var(--muted); font-size: 10px; }
+.legacy-field { margin-top: 13px; padding: 11px 13px; border: 1px dashed #5d5c3f; border-radius: 8px; background: #242619; }
+.legacy-field strong { color: #dfca91; font-size: 12px; }
+.legacy-field p { margin: 5px 0; color: #c4cfbe; }
+.legacy-field small { color: var(--muted); }
+.legacy-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.legacy-details-grid > div { padding: 11px; border: 1px solid #39483b; border-radius: 8px; background: #101a13; }
+.legacy-details-grid strong { color: #d4c18b; }
+.character-form-actions { position: sticky; bottom: -25px; z-index: 2; margin: 0 -25px -25px; padding: 14px 25px 20px; border-top: 1px solid #40503f; background: #1c271ff2; backdrop-filter: blur(10px); }
+.character-form-actions .primary { width: 100%; min-height: 46px; font-size: 15px; }
+
+.battle-strategy-intro { max-width: 1040px; color: #bdcabc; }
+.combat-plan-form { display: grid; gap: 18px; margin-top: 18px; padding: 18px; border: 1px solid #596246; border-radius: 11px; background: #151f18; }
+.combat-plan-form-head, .combat-plan-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.combat-plan-form-head h3, .combat-plan-card h3 { color: #eee7d3; font: 400 21px Georgia, serif; }
+.combat-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.combat-resource-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.combat-resource-picker fieldset { min-width: 0; margin: 0; padding: 13px; border: 1px solid #3c4b3c; border-radius: 9px; background: #101a13; }
+.combat-resource-picker legend { padding: 0 6px; color: #d7ca9d; font-size: 13px; }
+.combat-resource-picker .choice-grid { grid-template-columns: 1fr; max-height: 250px; overflow-y: auto; padding-right: 3px; }
+.combat-plan-actions { display: flex; justify-content: flex-end; }
+.combat-plan-actions .primary { min-width: 220px; }
+.combat-plan-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 13px; margin-top: 18px; }
+.combat-plan-card { min-width: 0; padding: 16px; border: 1px solid #3f5040; border-radius: 10px; background: #1d2820; animation: ui-fade-move .2s ease both; }
+.combat-plan-card-actions { display: flex; gap: 5px; }
+.combat-plan-trigger { margin: 12px 0; color: #c7d3c2; }
+.combat-plan-trigger strong { color: var(--accent); }
+.combat-plan-resources { display: grid; gap: 7px; padding: 11px 0; border-top: 1px solid #364638; border-bottom: 1px solid #364638; }
+.combat-plan-resources > div { display: grid; grid-template-columns: 85px 1fr; gap: 9px; align-items: baseline; }
+.combat-plan-resources span, .combat-plan-copy > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.combat-plan-resources strong { color: #d8dfd3; font-size: 13px; font-weight: 500; }
+.combat-plan-copy { margin-top: 12px; }
+.combat-plan-copy .preserve-text { margin: 4px 0 0; max-height: none; }
+.battle-plan-empty { padding: 28px 14px; text-align: center; border: 1px dashed #465443; border-radius: 10px; background: #18221b; }
+.battle-plan-empty > span { display: block; margin-bottom: 7px; color: var(--accent); font-size: 31px; }
+.battle-plan-empty h3 { margin-bottom: 5px; }
+.battle-plan-empty p { margin-bottom: 13px; color: var(--muted); }
+.battle-resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+@media (max-width: 980px) {
+  .character-form-grid.combat-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .attribute-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .character-form-columns, .combat-resource-picker, .battle-resource-grid { grid-template-columns: 1fr; }
+  .skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .modal-wide { width: calc(100% - 16px); max-height: 94vh; padding: 17px; }
+  .character-form-grid, .character-form-grid.combat-fields, .combat-plan-grid { grid-template-columns: 1fr; }
+  .field-span-2 { grid-column: auto; }
+  .attribute-form-grid { grid-template-columns: repeat(3, 1fr); }
+  .choice-grid, .skill-grid { grid-template-columns: 1fr; }
+  .legacy-details-grid { grid-template-columns: 1fr; }
+  .character-form-actions { bottom: -17px; margin: 0 -17px -17px; padding: 12px 17px 17px; }
+  .combat-plan-form { padding: 13px; }
+  .combat-plan-list { grid-template-columns: 1fr; }
+  .combat-plan-card-head { flex-direction: column; }
+  .combat-plan-resources > div { grid-template-columns: 70px 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice-chip, .combat-plan-card { transition: none !important; animation: none !important; }
+}
