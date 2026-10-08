@@ -6,6 +6,7 @@ import Modal from './modal';
 import EntryEditor, { kindLabels } from './entry-editor';
 import BattleHub from './battle-hub';
 import NavigationLauncher from './navigation-launcher';
+import CharacterEditor from './character-editor';
 
 const attributes = { str: 'FOR', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' };
 const names = { ability: 'Habilidades', sheet: 'Ficha', item: 'Inventário', npc: 'NPCs', mechanic: 'Mecânicas', location: 'Locais', math: 'Batalha', note: 'Diário' };
@@ -113,6 +114,7 @@ export default function PlayerScreen() {
       </div>
     </article>;
   }
+
   function collection(kind, compact = false) {
     let list = visibleEntries(kind).sort((a, b) => kind === 'ability' ? (a.payload.requiredLevel ?? 1) - (b.payload.requiredLevel ?? 1) : kind === 'note' ? (b.payload.gameDay ?? 0) - (a.payload.gameDay ?? 0) : 0);
     if (compact && kind === 'ability') {
@@ -131,6 +133,7 @@ export default function PlayerScreen() {
       {compact && visibleEntries(kind).length > list.length && <button className="text-button compact-more" onClick={() => { setWide(false); choose(kind); }}>Ver todos os registros →</button>}
     </section>;
   }
+
   function sheet(compact = false) {
     return <section className={`panel character-panel ${compact ? 'compact-panel' : ''}`}><div className="panel-title"><div><p className="eyebrow">O centro do seu escudo</p><h2>Ficha</h2></div><button className="text-button" onClick={() => setModal({ type: 'character', character })}>Editar ficha</button></div>
       <div className="character-identity"><div className="character-emblem" aria-hidden="true"><svg viewBox="0 0 100 120"><path d="M50 4 90 22v43c0 22-20 42-40 52C30 107 10 87 10 65V22Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="m50 25 18 28-18 29-18-29Z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M50 16v78M26 53h48" fill="none" stroke="currentColor" strokeWidth="1" /></svg></div><div><h3 className="character-name">{character.name}</h3><p className="character-subtitle">{character.species} · {character.className}</p><p className="tag level-tag">Nível {character.level} · {character.background || 'Antecedente a definir'}</p></div></div>
@@ -145,14 +148,29 @@ export default function PlayerScreen() {
     </section>;
   }
 
-  async function saveCharacter(event) {
-    event.preventDefault(); const data = new FormData(event.currentTarget); const current = modal.character;
-    const details = { ...(current?.details ?? {}) };
-    Object.keys(details).forEach((key, index) => { details[key] = data.get(`detail-${index}`); });
-    if (data.get('newSection')?.trim()) details[data.get('newSection').trim()] = data.get('newContent');
-    const resources = (current?.resources ?? []).map((r, index) => ({ ...r, current: Number(data.get(`resource-${index}`)) }));
-    const values = { name: data.get('name'), className: data.get('className'), species: data.get('species'), background: data.get('background'), level: Number(data.get('level')), hp: Number(data.get('hp')), hpMax: Number(data.get('hpMax')), tempHp: Number(data.get('tempHp')), armorClass: Number(data.get('armorClass')), speed: Number(data.get('speed')), attributes: Object.fromEntries(Object.keys(attributes).map((key) => [key, Number(data.get(key))])), details, resources };
-    try { const result = await mutate(current ? `${base}/characters/${current.id}` : `${base}/characters`, current ? { ...values, expectedRevision: current.revision } : values, current ? 'PATCH' : 'POST'); setCharacterId(result.id); } catch { /* mensagem exibida no escudo */ }
+  async function saveCharacter(values) {
+    const current = modal.character;
+    try {
+      const result = await mutate(current ? `${base}/characters/${current.id}` : `${base}/characters`, current ? { ...values, expectedRevision: current.revision } : values, current ? 'PATCH' : 'POST');
+      setCharacterId(result.id);
+    } catch { /* a mensagem permanece visível no escudo */ }
+  }
+
+  async function saveCombatPlan(plan, values) {
+    const entry = {
+      kind: 'note',
+      characterId: character.id,
+      title: values.title,
+      body: values.body,
+      source: 'Plano de combate do jogador',
+      knowledge: 'confirmed',
+      payload: values.payload,
+    };
+    return mutate(plan ? `${base}/entries/${plan.id}` : `${base}/entries`, plan ? { ...entry, expectedRevision: plan.revision } : entry, plan ? 'PATCH' : 'POST', false);
+  }
+
+  async function deleteCombatPlan(plan) {
+    try { await mutate(`${base}/entries/${plan.id}?revision=${plan.revision}`, undefined, 'DELETE', false); } catch { /* a mensagem permanece visível no escudo */ }
   }
 
   return <div className="app-shell">
@@ -169,15 +187,15 @@ export default function PlayerScreen() {
             <div className="toolbar-tools">{screen !== 'math' && <label className="search"><span aria-hidden="true">⌕</span><input aria-label="Buscar nesta tela" placeholder="Buscar nesta tela…" value={query} onChange={(e) => setQuery(e.target.value)} /></label>}{['personal', 'campaign'].includes(group) && <button className={`secondary view-toggle ${wide ? 'toggled' : ''}`} aria-pressed={wide} onClick={() => setWide(!wide)}><span aria-hidden="true">◌</span> {wide ? 'Escudo aberto' : 'Tela única'}</button>}</div>
           </div>
           {pending > 0 && <p className="pending-line">◌ {pending} {pending === 1 ? 'informação precisa' : 'informações precisam'} de confirmação. Seus registros mantêm a origem visível.</p>}
-          {screen === 'math' ? <BattleHub character={character} entries={entries} onOpenEntry={(entry) => setModal({ type: 'entry', kind: entry.kind, entry })} /> : screen === 'note' ? <div className="single-screen">{collection('note')}</div> : <div className={`screen-grid ${wide ? 'wide-view' : 'single-view'}`}>{(wide ? tabs : [screen]).map((key) => <div key={key} className={`screen-pane ${key === screen ? 'focused-pane' : ''}`}>{key === 'sheet' ? sheet(wide) : collection(key, wide)}</div>)}</div>}
+          {screen === 'math' ? <BattleHub character={character} entries={entries} busy={saving} onOpenEntry={(entry) => setModal({ type: 'entry', kind: entry.kind, entry })} onSavePlan={saveCombatPlan} onDeletePlan={deleteCombatPlan} /> : screen === 'note' ? <div className="single-screen">{collection('note')}</div> : <div className={`screen-grid ${wide ? 'wide-view' : 'single-view'}`}>{(wide ? tabs : [screen]).map((key) => <div key={key} className={`screen-pane ${key === screen ? 'focused-pane' : ''}`}>{key === 'sheet' ? sheet(wide) : collection(key, wide)}</div>)}</div>}
         </>}
         <footer className="page-footer">ESCUDO RPG <span>Informações do jogador, na perspectiva do jogador.</span></footer>
       </div>
     </main>
-    {modal && <Modal title={modal.type === 'entry' ? `${modal.entry ? 'Editar' : 'Novo registro de'} ${kindLabels[modal.kind].toLowerCase()}` : modal.type === 'character' ? modal.character ? 'Editar ficha' : 'Novo personagem' : modal.type === 'campaign' ? 'Nova campanha' : modal.type === 'link' ? `Vincular ${modal.entry.title}` : 'Excluir registro'} onClose={() => { if (!saving) setModal(null); }}>
+    {modal && <Modal size={modal.type === 'character' ? 'wide' : 'default'} title={modal.type === 'entry' ? `${modal.entry ? 'Editar' : 'Novo registro de'} ${kindLabels[modal.kind].toLowerCase()}` : modal.type === 'character' ? modal.character ? 'Editar ficha' : 'Novo personagem' : modal.type === 'campaign' ? 'Nova campanha' : modal.type === 'link' ? `Vincular ${modal.entry.title}` : 'Excluir registro'} onClose={() => { if (!saving) setModal(null); }}>
       {notice?.error && <p className="error-text" role="alert">{notice.text}</p>}
       {modal.type === 'entry' && <EntryEditor entry={modal.entry} kind={modal.kind} characterId={characterId} gameDay={campaign.gameDay} busy={saving} onSave={(values) => mutate(modal.entry ? `${base}/entries/${modal.entry.id}` : `${base}/entries`, modal.entry ? { ...values, expectedRevision: modal.entry.revision } : values, modal.entry ? 'PATCH' : 'POST')} />}
-      {modal.type === 'character' && <form className="form-stack" onSubmit={saveCharacter}><label>Nome<input autoFocus name="name" required maxLength="200" defaultValue={modal.character?.name ?? ''} /></label><div className="form-grid">{[['className', 'Classe'], ['species', 'Raça / espécie'], ['background', 'Antecedente']].map(([key, label]) => <label key={key}>{label}<input name={key} maxLength="200" defaultValue={modal.character?.[key] ?? ''} /></label>)}<label>Nível<input name="level" type="number" min="1" max="20" defaultValue={modal.character?.level ?? 1} required /></label></div><div className="form-grid">{[['hp', 'PV atual', 0, 10], ['hpMax', 'PV máximo', 1, 10], ['tempHp', 'PV temporário', 0, 0], ['armorClass', 'CA base', 0, 10], ['speed', 'Deslocamento em metros', 0, 9]].map(([key, label, min, fallback]) => <label key={key}>{label}<input name={key} type="number" min={min} max={key === 'armorClass' ? 100 : 10000} step={key === 'speed' ? '0.1' : '1'} required defaultValue={modal.character?.[key] ?? fallback} /></label>)}</div><div className="form-grid">{Object.entries(attributes).map(([key, label]) => <label key={key}>{label}<input name={key} type="number" min="1" max="30" required defaultValue={modal.character?.attributes[key] ?? 10} /></label>)}</div>{Object.entries(modal.character?.details ?? {}).map(([key, value], i) => <label key={key}>{key}<textarea name={`detail-${i}`} rows="3" defaultValue={value} /></label>)}{modal.character?.resources.map((r, i) => <label key={i}>{r.name} (máximo {r.max})<input name={`resource-${i}`} type="number" min="0" max={r.max} defaultValue={r.current} /></label>)}<label>Nova seção da ficha<input name="newSection" maxLength="100" placeholder="Ex.: perícias, personalidade, magias, moedas" /></label><label>Conteúdo da nova seção<textarea name="newContent" rows="4" /></label><button className="primary" disabled={saving}>Salvar ficha</button></form>}
+      {modal.type === 'character' && <CharacterEditor character={modal.character} busy={saving} onSave={saveCharacter} />}
       {modal.type === 'campaign' && <form className="form-stack" onSubmit={async (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setSaving(true); try { const created = await apiRequest('/campaigns', { method: 'POST', body: JSON.stringify({ name: data.get('name'), description: data.get('description'), rulesProfile: data.get('rulesProfile'), gameDay: Number(data.get('gameDay')) }) }); setCampaigns((list) => [...list, created]); await refresh(created.id); setModal(null); } catch (err) { setNotice({ text: err.message, error: true }); } finally { setSaving(false); } }}><label>Nome da campanha<input autoFocus name="name" required maxLength="200" /></label><label>Descrição<textarea name="description" rows="4" /></label><div className="form-grid"><label>Base de regras<select name="rulesProfile" defaultValue="homebrew">{Object.entries(profileNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Dia da campanha<input name="gameDay" type="number" min="0" defaultValue="1" required /></label></div><p className="muted">O perfil identifica a referência da mesa. Habilidades e exceções são registradas por você.</p><button className="primary" disabled={saving}>Criar campanha</button></form>}
       {modal.type === 'link' && <form className="form-stack" onSubmit={async (e) => { e.preventDefault(); const data = new FormData(e.currentTarget); try { await mutate(`${base}/links`, { sourceId: modal.entry.id, targetId: data.get('targetId'), relation: data.get('relation') }); } catch { /* mensagem no escudo */ } }}><label>Relacionar com<select name="targetId" required><option value="">Selecione um registro</option>{entries.filter((e) => e.id !== modal.entry.id).map((e) => <option key={e.id} value={e.id}>{kindLabels[e.kind]} · {e.title}</option>)}</select></label><label>Relação<select name="relation">{Object.entries(relationNames).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><button className="primary" disabled={saving}>Salvar vínculo</button></form>}
       {modal.type === 'delete' && <div className="form-stack"><p>Excluir “{modal.entry.title}” e seus vínculos deste caderno?</p><button className="primary danger-button" disabled={saving} onClick={() => mutate(`${base}/entries/${modal.entry.id}?revision=${modal.entry.revision}`, undefined, 'DELETE').catch(() => {})}>Excluir registro</button><button className="secondary" onClick={() => setModal(null)}>Voltar</button></div>}
