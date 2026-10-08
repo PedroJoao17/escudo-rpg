@@ -32,22 +32,24 @@ function CombatPlanForm({ plan, weapons, techniques, passives, busy, onCancel, o
     const strategy = String(data.get('strategy') ?? '').trim();
     const trigger = String(data.get('trigger') ?? '').trim();
     const notes = String(data.get('notes') ?? '').trim();
-    await onSave(plan, {
-      title,
-      body: [trigger, sequence, strategy, notes].filter(Boolean).join('\n\n'),
-      payload: {
-        ...p,
-        combatPlan: true,
-        section: 'Batalha',
-        weaponIds: data.getAll('weaponIds'),
-        techniqueIds: data.getAll('techniqueIds'),
-        passiveIds: data.getAll('passiveIds'),
-        trigger,
-        sequence,
-        strategy,
-        notes,
-      },
-    });
+    try {
+      await onSave(plan ?? null, {
+        title,
+        body: [trigger, sequence, strategy, notes].filter(Boolean).join('\n\n'),
+        payload: {
+          ...p,
+          combatPlan: true,
+          section: 'Batalha',
+          weaponIds: data.getAll('weaponIds'),
+          techniqueIds: data.getAll('techniqueIds'),
+          passiveIds: data.getAll('passiveIds'),
+          trigger,
+          sequence,
+          strategy,
+          notes,
+        },
+      });
+    } catch { /* o aviso da API permanece visível e o formulário continua aberto */ }
   }
 
   return <form className="combat-plan-form" onSubmit={submit}>
