@@ -23,11 +23,11 @@ function uniqueName(prefix) {
   return `${prefix} ${info.project.name}-${info.retry}-${Date.now()}`;
 }
 
-test('infos gerais, inventário, consumo e cálculo no Hub de Combate funcionam através da API', async ({ page }) => {
+test('infos gerais, inventário, consumo e cálculo funcionam com o mock local', async ({ page }) => {
   const itemName = uniqueName('Poção');
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ander Espinhoso' })).toBeVisible();
   await expect(page.getByText('CONSULTA · SEM EDIÇÃO NESTA TELA')).toBeVisible();
 
   await navigate(page, 'Inventário');
@@ -55,18 +55,21 @@ test('infos gerais, inventário, consumo e cálculo no Hub de Combate funcionam 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('campanha centraliza NPCs, locais e objetivos mantendo a origem', async ({ page }) => {
+test('campanha usa Forte Galdrak, NPCs e objetivos do mock do jogador', async ({ page }) => {
   const objectiveName = uniqueName('Objetivo');
 
   await page.goto('/');
   await navigate(page, 'Campanha');
+  await expect(page.getByRole('heading', { name: 'Forte Galdrak' })).toBeVisible();
+
   await page.getByRole('button', { name: /NPCs/ }).click();
-  await page.getByRole('button', { name: 'Editar Mira, a artesã' }).click();
-  await expect(page.getByLabel('Origem da informação')).toHaveValue('Exemplo fictício do projeto');
+  await page.getByRole('button', { name: 'Editar Brenn' }).click();
+  await expect(page.getByLabel('Origem da informação')).toHaveValue('Notas do jogador · Forte Galdrak');
   await page.getByRole('button', { name: 'Fechar', exact: true }).click();
 
   await page.getByRole('button', { name: /Locais/ }).click();
   await expect(page.getByText('Mapa esquemático · sem escala')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Forte Galdrak/ })).toBeVisible();
 
   await page.getByRole('button', { name: /Objetivos/ }).click();
   await page.getByRole('button', { name: '+ Adicionar', exact: true }).click();

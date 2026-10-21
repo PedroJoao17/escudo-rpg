@@ -12,30 +12,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   validate:
-    name: Testes, MySQL e navegador
+    name: Frontend, mocks e navegador
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    services:
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_ROOT_PASSWORD: root_test
-          MYSQL_DATABASE: escudo_rpg_test
-          MYSQL_USER: escudo
-          MYSQL_PASSWORD: escudo_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=30
+    timeout-minutes: 15
     env:
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_NAME: escudo_rpg_test
-      DB_USER: escudo
-      DB_PASSWORD: escudo_test
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v7
@@ -48,7 +28,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      - run: npm run test:db
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
