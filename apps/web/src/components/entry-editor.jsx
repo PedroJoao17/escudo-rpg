@@ -72,7 +72,9 @@ export default function EntryEditor({ entry, kind, characterId, gameDay, onSave,
     if (kind === 'note') {
       payload.gameDay = Number(data.get('gameDay'));
       payload.section = data.get('section');
-      payload.objectiveStatus = data.get('objectiveStatus');
+      const objectiveSection = /objetiv|miss[aã]o/i.test(payload.section ?? '');
+      if (objectiveSection || p.objectiveStatus) payload.objectiveStatus = data.get('objectiveStatus');
+      else delete payload.objectiveStatus;
       if (data.get('sessionDate')) payload.sessionDate = data.get('sessionDate');
       else delete payload.sessionDate;
     }

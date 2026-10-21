@@ -24,7 +24,7 @@ export default function VisualSlot({ slot, label, state, portrait = false, compa
   >
     <div className="visual-slot-frame" aria-hidden="true">
       <span className="visual-slot-rune">✦</span>
-      <span className="visual-slot-corners">⌜　⌝<br />⌞　⌟</span>
+      <span className="visual-slot-corners">⌜ ⌝<br />⌞ ⌟</span>
     </div>
     <div className="visual-slot-copy">
       <strong>{label}</strong>
