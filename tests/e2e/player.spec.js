@@ -1,32 +1,32 @@
 import { test, expect } from '@playwright/test';
 
 async function navigate(page, name) {
-  await page.getByRole('button', { name: 'Abrir navegação' }).click();
+  const sidebar = page.getByRole('complementary', { name: 'Navegação principal' });
+  if (!(await sidebar.isVisible())) await page.getByRole('button', { name: 'Abrir menu principal' }).click();
   await page.getByRole('button', { name, exact: true }).click();
 }
 
-async function useSingleView(page) {
-  await page.getByRole('button', { name: /Escudo aberto/ }).click();
-}
-
-test('ficha, cadastro de item, consumo, recarga e cálculo no Hub de Batalha funcionam através da API', async ({ page }) => {
+test('infos gerais, inventário, consumo e cálculo no Hub de Combate funcionam através da API', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
-  await useSingleView(page);
-  await page.getByRole('tab', { name: 'Inventário' }).click();
-  await page.getByRole('button', { name: 'Adicionar Item', exact: true }).click();
+  await expect(page.getByText('CONSULTA · SEM EDIÇÃO NESTA TELA')).toBeVisible();
+
+  await navigate(page, 'Inventário');
+  await page.getByRole('button', { name: '+ Item', exact: true }).click();
   await page.getByLabel('Nome ou título').fill(`Poção ${test.info().project.name}`);
+  await page.getByLabel('Tipo de item').selectOption('consumable');
   await page.getByLabel('Quantidade', { exact: true }).fill('2');
   await page.getByLabel('Descrição completa').fill('Item adquirido nesta sessão.');
   await page.getByRole('button', { name: 'Salvar registro' }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: `Consumir uma unidade de Poção ${test.info().project.name}` }).click();
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
+
   await page.reload();
-  await useSingleView(page);
-  await page.getByRole('tab', { name: 'Inventário' }).click();
+  await navigate(page, 'Inventário');
   await expect(page.getByLabel(`Quantidade de Poção ${test.info().project.name}`)).toHaveText('1');
-  await navigate(page, 'Batalha');
+
+  await navigate(page, 'Combate');
   await page.getByText('Rolagens e cálculo manual').click();
   await page.getByLabel('Primeiro d20 físico').fill('12');
   await page.getByRole('combobox', { name: 'Proficiência', exact: true }).selectOption('proficient');
@@ -36,21 +36,23 @@ test('ficha, cadastro de item, consumo, recarga e cálculo no Hub de Batalha fun
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('consulta NPC e locais e registra diário mantendo a origem', async ({ page }) => {
+test('campanha centraliza NPCs, locais e objetivos mantendo a origem', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Ari, o Batedor' })).toBeVisible();
   await navigate(page, 'Campanha');
-  await useSingleView(page);
+  await page.getByRole('button', { name: /NPCs/ }).click();
   await page.getByRole('button', { name: 'Editar Mira, a artesã' }).click();
   await expect(page.getByLabel('Origem da informação')).toHaveValue('Exemplo fictício do projeto');
   await page.getByRole('button', { name: 'Fechar', exact: true }).click();
-  await page.getByRole('tab', { name: 'Locais', exact: true }).click();
+
+  await page.getByRole('button', { name: /Locais/ }).click();
   await expect(page.getByText('Mapa esquemático · sem escala')).toBeVisible();
-  await navigate(page, 'Diário de sessão');
-  await page.getByRole('button', { name: 'Adicionar Anotação', exact: true }).click();
-  await page.getByLabel('Nome ou título').fill(`Pista ${test.info().project.name}`);
-  await page.getByLabel('Descrição completa').fill('Uma pista ainda precisa de confirmação.');
-  await page.getByLabel('Confiança na informação').selectOption('rumor');
+
+  await page.getByRole('button', { name: /Objetivos/ }).click();
+  await page.getByRole('button', { name: '+ Adicionar', exact: true }).click();
+  await page.getByLabel('Nome ou título').fill(`Objetivo ${test.info().project.name}`);
+  await page.getByLabel('Descrição completa').fill('Uma tarefa ainda precisa ser resolvida.');
+  await page.getByLabel('Confiança na informação').selectOption('confirmed');
   await page.getByRole('button', { name: 'Salvar registro' }).click();
-  await expect(page.getByRole('heading', { name: `Pista ${test.info().project.name}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Objetivo ${test.info().project.name}` })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
