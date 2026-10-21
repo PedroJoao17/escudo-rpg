@@ -42,6 +42,7 @@ export default function HubSidebar({ activeHub, open, campaign, character, pendi
           key={hub.id}
           type="button"
           className={`hub-nav-item ${activeHub === hub.id ? 'active' : ''}`}
+          aria-label={hub.label}
           aria-current={activeHub === hub.id ? 'page' : undefined}
           onClick={() => choose(hub.id)}
         >
