@@ -69,7 +69,7 @@ test('campanha usa Forte Galdrak, NPCs e objetivos do mock do jogador', async ({
 
   await page.getByRole('button', { name: /Locais/ }).click();
   await expect(page.getByText('Mapa esquemático · sem escala')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Forte Galdrak/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: '⌖ Forte Galdrak', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Objetivos/ }).click();
   await page.getByRole('button', { name: '+ Adicionar', exact: true }).click();
