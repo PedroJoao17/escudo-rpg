@@ -1,6 +1,6 @@
 import { createMockData } from './mock-data';
 
-const STORAGE_KEY = 'escudo-rpg:mock-store:v3';
+const STORAGE_KEY = 'escudo-rpg:mock-store:v4';
 const clone = (value) => typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
 const makeId = () => globalThis.crypto?.randomUUID?.() ?? `mock-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 

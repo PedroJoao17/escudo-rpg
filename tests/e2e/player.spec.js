@@ -64,7 +64,7 @@ test('campanha usa Forte Galdrak, NPCs e objetivos do mock do jogador', async ({
 
   await page.getByRole('button', { name: /NPCs/ }).click();
   await page.getByRole('button', { name: 'Editar Brenn' }).click();
-  await expect(page.getByLabel('Origem da informação')).toHaveValue('Notas do jogador · Forte Galdrak');
+  await expect(page.getByLabel('Origem da informação')).toHaveValue('Obsidian · Forte Galdrak');
   await page.getByRole('button', { name: 'Fechar', exact: true }).click();
 
   await page.getByRole('button', { name: /Locais/ }).click();

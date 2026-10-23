@@ -18,19 +18,20 @@ As áreas de arte já possuem placeholders responsivos, mas as imagens serão tr
 
 ## Mock atual
 
-O mock inicial usa as informações já consolidadas para o personagem **Ander Espinhoso** e a campanha **Forte Galdrak**:
+O mock usa como fonte o vault organizado do Obsidian e a ficha PDF de Ander. Quando as fontes divergem, a divergência é preservada no próprio registro em vez de ser resolvida por suposição.
 
-- Halfling Pés-Leves;
-- Patrulheiro Espinhudo, nível 3;
-- Trust e Hope;
-- arco curto e flechas;
-- Rati;
-- Brenn e Cain;
-- Forte Galdrak e locais ligados à excursão;
-- equipamentos e moedas já registrados nas notas anteriores;
-- habilidades do rework do mestre organizadas por nível, mantendo como pendente o que ainda precisa de confirmação textual.
+Estado organizado atualmente:
 
-As alterações feitas pela interface ficam em `localStorage`, portanto sobrevivem a reloads no mesmo navegador. Para voltar ao mock inicial, limpe o armazenamento local do site.
+- **Ander Espinhoso** — Halfling Pés-Leves, Patrulheiro Espinhudo, Herói do Povo;
+- **nível 2** conforme o vault organizado; a ficha PDF anexada ainda exibe nível 1 e permanece registrada como referência anterior;
+- CA 14, deslocamento 7,5 m e atributos da ficha;
+- Trust, Hope, arco curto, zarabatana, flechas, dardos, armadura e demais itens presentes na ficha;
+- Rati com ficha própria;
+- Forte Galdrak no Dia 31 de cerco, com situação, NPCs, locais e mecânicas registradas nas notas;
+- habilidades atuais detalhadas: Senso do Sobrevivente, os três Estilos Adaptáveis, Mestria Tripla, Marca Espinhuda e Afligir;
+- progressão futura registrada sem liberar habilidades antes do nível correspondente, incluindo Ímpeto, Técnicas de Mestria, Sem Fôlego, Transição Fluida e técnicas posteriores.
+
+As alterações feitas pela interface ficam em `localStorage`, portanto sobrevivem a reloads no mesmo navegador. Mudanças de versão do mock usam uma nova chave de armazenamento para carregar os dados-base atualizados.
 
 ## Executar
 
