@@ -1,8 +1,10 @@
+import { calculateCheck, rollCheck, rollExpression } from '@escudo/rules';
 import { createMockData } from './mock-data';
 
 const STORAGE_KEY = 'escudo-rpg:mock-store:v4';
 const clone = (value) => typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
 const makeId = () => globalThis.crypto?.randomUUID?.() ?? `mock-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
 
 function loadStore() {
   if (typeof window === 'undefined') return createMockData();
@@ -57,6 +59,18 @@ export async function mockRequest(path, options = {}) {
   const cleanPath = path.split('?')[0];
   const segments = cleanPath.split('/').filter(Boolean);
   const body = options.body ? JSON.parse(options.body) : undefined;
+
+  if (segments[0] === 'calculations' && segments[1] === 'check' && method === 'POST') {
+    const result = Array.isArray(body.rolls) && body.rolls.length
+      ? calculateCheck(body)
+      : rollCheck(body, rollDie);
+    return clone(result);
+  }
+
+  if (segments[0] === 'calculations' && segments[1] === 'dice' && method === 'POST') {
+    return clone(rollExpression(body.expression, rollDie, { critical: Boolean(body.critical) }));
+  }
+
   const store = loadStore();
 
   if (segments.length === 1 && segments[0] === 'campaigns') {

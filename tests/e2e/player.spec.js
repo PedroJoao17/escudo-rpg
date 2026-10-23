@@ -60,7 +60,7 @@ test('campanha usa Forte Galdrak, NPCs e objetivos do mock do jogador', async ({
 
   await page.goto('/');
   await navigate(page, 'Campanha');
-  await expect(page.getByRole('heading', { name: 'Forte Galdrak' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Forte Galdrak', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /NPCs/ }).click();
   await page.getByRole('button', { name: 'Editar Brenn' }).click();
